@@ -15,14 +15,14 @@ int updatenh=0;
 
 #define LOOPTIME 10
 
-Motor right(11,10,20,21);
-Motor left(9,8,18,19);
+Motor right(11,10,7,2);
+Motor left(5,6,3,4);
 
 volatile long encoder0Pos = 0;    // encoder 1
 volatile long encoder1Pos = 0;    // encoder 2
 
 double left_kp = 3.8 , left_ki = 0 , left_kd = 0.0;             // modify for optimal performance
-double right_kp = 4 , right_ki = 0 , right_kd = 0.0;
+double right_kp = 3.2 , right_ki = 0 , right_kd = 0.0;
 
 float demandx=0;
 float demandz=0;
@@ -39,7 +39,7 @@ PID leftPID(&left_input, &left_output, &left_setpoint, left_kp, left_ki, left_kd
 unsigned long currentMillis;
 unsigned long prevMillis;
 
-float encoder0Diff;
+float encoder0Diff; 
 float encoder1Diff;
 
 float encoder0Error;
@@ -90,8 +90,8 @@ void loop() {
   if (currentMillis - prevMillis >= LOOPTIME){
     prevMillis = currentMillis;
 
-    demand_speed_left = demandx - (demandz*0.1075);
-    demand_speed_right = demandx + (demandz*0.1075);
+    demand_speed_left = demandx - (demandz*0.099);
+    demand_speed_right = demandx + (demandz*0.099);
   
     /*PID controller for speed control
       Base speed being 1 ms and the demand_speed variables controlling it at fractions of the base.
@@ -103,14 +103,14 @@ void loop() {
     pos_act_left = encoder0Pos;
     pos_act_right = encoder1Pos;
   
-    encoder0Error = (demand_speed_left*39.65)-encoder0Diff; // 3965 ticks in 1m = 39.65 ticks in 10ms, due to the 10 millis loop
-    encoder1Error = (demand_speed_right*39.65)-encoder1Diff;
+    encoder0Error = (demand_speed_left*7.12634074)-encoder0Diff; // 3965 ticks in 1m = 39.65 ticks in 10ms, due to the 10 millis loop
+    encoder1Error = (demand_speed_right*7.12634074)-encoder1Diff;
   
     encoder0Prev = encoder0Pos; // Saving values
     encoder1Prev = encoder1Pos;
   
-    left_setpoint = demand_speed_left*39.65;  //Setting required speed as a mul/frac of 1 m/s
-    right_setpoint = demand_speed_right*39.65;
+    left_setpoint = demand_speed_left*7.12634074;  //Setting required speed as a mul/frac of 1 m/s
+    right_setpoint = demand_speed_right*7.12634074;
   
     left_input = encoder0Diff;  //Input to PID controller is the current difference
     right_input = encoder1Diff;
