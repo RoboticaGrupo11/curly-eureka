@@ -8,6 +8,18 @@
 #include <std_msgs/Int16.h>
 #include <ros/time.h>
 
+#include <Servo.h>
+#if (ARDUINO >= 100)
+ #include <Arduino.h>
+#else
+ #include <WProgram.h>
+#endif
+
+Servo myservo;
+Servo myservo2;
+
+int pos = 0;
+int pos2 = 0;
 
 ros::NodeHandle  nh;
 
@@ -63,6 +75,75 @@ ros::Publisher right_wheel_pub("rwheel", &right_wheel_msg);
 double pos_act_left = 0;                    //Actual position for wheel in encoder ticks
 double pos_act_right = 0;                    
 
+
+/** SERVOOS**/
+
+ros::NodeHandle nh3;
+std_msgs::Int16 str_msg;
+ros::Publisher angle("angle", &str_msg);
+
+void messageCb( const std_msgs::String& string){
+  nh3.loginfo(string.data);
+  if(String(string.data).equals("x")){
+    nh3.loginfo("Pinzón es gay");
+    while(pos <= 150) { // goes from 0 degrees to 180 degrees
+    pos = pos+1;
+    myservo.write(pos);              // tell servo to go to position in variable 'pos'
+    str_msg.data = pos;
+    angle.publish(&str_msg);
+    delay(15);                       // waits 15ms for the servo to reach the position
+    }
+   }else if(String(string.data).equals("z")){
+    while (pos >=0) { // goes from 180 degrees to 0 degrees
+    myservo.write(pos);              // tell servo to go to position in variable 'pos'
+    delay(15);                       // waits 15ms for the servo to reach the position
+    pos = pos-1;
+    str_msg.data = pos;
+    angle.publish(&str_msg);
+    }
+  }else if(String(string.data).equals("i")){
+    if (pos2<180){
+      pos2=pos2+30;
+      myservo2.write(pos2);
+      str_msg.data = pos;
+      angle.publish(&str_msg);
+    }
+  }else if(String(string.data).equals("k")){
+    if (pos2>=0){
+      pos2=pos2-30;
+      myservo2.write(pos2);
+      str_msg.data = pos;
+      angle.publish(&str_msg);
+    }
+  }
+  }
+
+
+ros::Subscriber<std_msgs::String> sub("/manipulador", &messageCb );
+
+
+// ******************SERVO CONTROL ***************++
+
+ros::NodeHandle  nh2;
+int d_max = 5;
+int grados = 0;
+double d = 0;
+
+Servo servo;
+
+void servo_cb( const std_msgs::Float32& cmd_msg){
+  d = cmd_msg.data-10;
+  if (d >= 0 and d <= 5){
+      grados = round((d/d_max)*180);
+      servo.write(grados);
+  }
+}
+
+
+ros::Subscriber<std_msgs::Float32> sub("servo", servo_cb);
+
+/****************** SETUP ****************/
+
 void setup() {
   nh.initNode();
   nh.subscribe(sub);
@@ -83,9 +164,22 @@ void setup() {
   attachInterrupt(digitalPinToInterrupt(left.en_b), change_left_b, CHANGE);
   attachInterrupt(digitalPinToInterrupt(right.en_a), change_right_a, CHANGE);
   attachInterrupt(digitalPinToInterrupt(right.en_b), change_right_b, CHANGE);
+
+  myservo.attach(8);  // attaches the servo on pin 9 to the servo object
+  myservo2.attach(9);
+  myservo.write(0);
+  myservo2.write(0);
+  nh3.initNode();
+  nh3.subscribe(sub);
+  nh2.initNode();
+  nh2.subscribe(sub);
+  servo.attach(9); //attach it to pin 9
 }
 
 void loop() {
+  
+  nh3.spinOnce();
+  nh2.spinOnce();
   currentMillis = millis();
   if (currentMillis - prevMillis >= LOOPTIME){
     prevMillis = currentMillis;
